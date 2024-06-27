@@ -92,6 +92,18 @@ class AMagicalProjectCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* Num_4;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* Keyboard_U;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* Keyboard_I;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* Keyboard_O;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* Keyboard_P;
+
 public:
 	//=============================Player State With Blueprint=============================//
 	UPROPERTY(BlueprintReadOnly, Category = "Character")	
@@ -206,8 +218,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "ItemSlot")
 	TArray<FInvenSlot> ItemSlot;
 
-	UPROPERTY(BlueprintReadOnly, Category = "ItemSlot")		
-	TArray<FInvenSlot> QuickSlot;
+	//==========================QuickSlot==========================//
+	UPROPERTY(BlueprintReadOnly, Category = "Character")
+	TArray<int> QuickSlotIndex;
 
 	//=================================WeaponSlot
 	UPROPERTY(BlueprintReadOnly, Category = "ItemSlot")
@@ -226,10 +239,10 @@ public:
 	void UseItemSlot(int32 _SlotIdx);
 
 	UFUNCTION(BlueprintCallable, Category = "Function")
-	void AddQuickSlot(int32 _ItemSlotIdx, int32 _QuickSlotIdx);
-
-	UFUNCTION(BlueprintCallable, Category = "Function")
 	void DeleteSlot(int32 _SlotIdx);
+
+	UFUNCTION(BlueprintCallable, Category = "Function")	
+	void AddQuickSlot(int32 _QuickSlotNum, int32 _SlotIdx);
 
 public:
 	AMagicalProjectCharacter();
@@ -260,6 +273,10 @@ protected:
 	void InputNum_2();
 	void InputNum_3();
 	void InputNum_4();
+	void InputKeyU();
+	void InputKeyI();
+	void InputKeyO();
+	void InputKeyP();
 	void SetCameraDist(const FInputActionValue& Value);	
 	void SetCameraOffset(const FInputActionValue& Value);
 	//=================================================Custom Func=================================================//
@@ -274,6 +291,7 @@ protected:
 	void SettingCamera(float _DT, float _Length, FVector _Offset);
 	void AddItemSlot(FGameItem _Item);
 	void FindObjByLineTrace();
+	void UseQuickSlot(int32 _QuickSlotNum);
 
 	//=================================================Custom Data=================================================//
 	enum class EPlayerStatus	
@@ -332,7 +350,7 @@ protected:
 	//============================Widget
 	UUserWidget* m_CastingAimWidget;
 	UUserWidget* m_InventoryWidget;
-	UUserWidget* m_QuickSlotWidget;
+	//UUserWidget* m_QuickSlotWidget;
 
 	//============================Controller
 	ACustomPlayerController* m_Controller;
@@ -352,8 +370,7 @@ protected:
 
 
 	FInvenSlot InitialValueSlot;
-	//==========================QuickSlot==========================//
-	TArray<int32> QuicktoItemSlotIndex;
+
 
 	//==========================Load WeaponClass
 	UClass* LoadWeaponClass(const FName& _itemName);

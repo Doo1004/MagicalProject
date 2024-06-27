@@ -58,6 +58,7 @@ protected:
 	ULightComponent*			m_cLight;
 	TArray<AInteractiveObj*>	m_aTriggerActors;
 	USoundWave*					m_uLockedSound;
+	USoundWave*					m_uSwitchSound;
 
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)

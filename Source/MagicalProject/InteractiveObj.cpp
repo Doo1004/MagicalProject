@@ -39,11 +39,10 @@ AInteractiveObj::AInteractiveObj()
 	DeactiveWidget->SetDrawAtDesiredSize(true);
 	DeactiveWidget->SetVisibility(false);
 
-	if (ObjectType == EInteractiveObjectType::Door)
-	{
-		ConstructorHelpers::FObjectFinder<USoundWave>LockedSound(TEXT("/Game/CustomAsset/Sound/Lock"));
-		m_uLockedSound = LockedSound.Object;
-	}
+	ConstructorHelpers::FObjectFinder<USoundWave>LockedSound(TEXT("/Game/CustomAsset/Sound/Lock"));
+	m_uLockedSound = LockedSound.Object;
+	ConstructorHelpers::FObjectFinder<USoundWave>SwitchSound(TEXT("/Game/CustomAsset/Sound/MP_Button"));
+	m_uSwitchSound = SwitchSound.Object;
 
 	OpenDoorAngle = 110.f;
 	OpenDoorSpeed = 3.f;
@@ -65,12 +64,20 @@ void AInteractiveObj::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (ObjectType == EInteractiveObjectType::Door)
+	//if (ObjectType == EInteractiveObjectType::Door)
+	//{
+	//	if (AudioComponent->IsPlaying())
+	//		GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("SoundPlay"));
+	//	else
+	//		GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("SoundStopped"));
+	//}
+
+	if (ObjectType == EInteractiveObjectType::Switch)
 	{
-		if (AudioComponent->IsPlaying())
-			GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("SoundPlay"));
+		if(m_uSwitchSound)
+			GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("Sound Loaded"));
 		else
-			GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("SoundStopped"));
+			GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("Sound Not Loaded"));
 	}
 
 	//if (AutoTrigger)
@@ -299,6 +306,10 @@ void AInteractiveObj::ActiveObject()
 		Active = false;
 	else
 		Active = true;
+
+	if (ObjectType == EInteractiveObjectType::Switch)
+		if (m_uSwitchSound)
+			UGameplayStatics::PlaySoundAtLocation(this, m_uSwitchSound, GetActorLocation());
 
 	m_bTrigger = true;
 	m_bSoundPlay = true;

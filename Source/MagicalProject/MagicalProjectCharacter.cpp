@@ -61,7 +61,6 @@ AMagicalProjectCharacter::AMagicalProjectCharacter()
 
 	m_CastingAimWidget = nullptr;
 	m_InventoryWidget = nullptr;
-	m_QuickSlotWidget = nullptr;
 
 	MoveEnable = true; 
 	m_ePlayerStatus = EPlayerStatus::IDLE;
@@ -78,8 +77,7 @@ AMagicalProjectCharacter::AMagicalProjectCharacter()
 	iWeaponEquipSlotNum = -1;
 
 	ItemSlot.Empty();
-	QuickSlot.Empty();
-	QuicktoItemSlotIndex.Empty();
+	QuickSlotIndex.Empty();
 
 	InitialValueSlot.ItemName = NAME_None;
 	InitialValueSlot.Amount = 0;
@@ -90,11 +88,8 @@ AMagicalProjectCharacter::AMagicalProjectCharacter()
 	for (int32 i = 0; i < 15; ++i)
 		ItemSlot.Add(InitialValueSlot);
 
-	for (int32 i = 0; i < 4; ++i)
-		QuickSlot.Add(InitialValueSlot);
-
-	for (int32 i = 0; i < 4; ++i)
-		QuicktoItemSlotIndex.Add(-1);
+	for (int i = 0; i < 4; ++i)
+		QuickSlotIndex.Add(-1);
 }
 
 void AMagicalProjectCharacter::BeginPlay()
@@ -122,7 +117,7 @@ void AMagicalProjectCharacter::BeginPlay()
 	{
 		m_InventoryWidget = CreateWidget<UUserWidget>(GetWorld(), InventoryWidgetClass);
 		if (m_InventoryWidget != nullptr)
-			m_InventoryWidget->AddToViewport();
+			m_InventoryWidget->AddToViewport(1);
 	}
 
 	m_aActiveWeapon = nullptr;
@@ -137,7 +132,7 @@ void AMagicalProjectCharacter::BeginPlay()
 	m_fMaxSP = Stamina;
 
 	m_CastingAimWidget->SetVisibility(ESlateVisibility::Hidden);
-	m_InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+	m_InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
 	WakeUpAnimPlay = true;
 
 	m_Controller = Cast<ACustomPlayerController>(GetController());
@@ -150,15 +145,11 @@ void AMagicalProjectCharacter::Tick(float DeltaTime)
 	if (m_aLineHitActor)
 		GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, m_aLineHitActor->GetActorLabel());
 
-	//FString Message1 = FString::Printf(TEXT("TTViewCoolTime : %f"), m_fTTViewCoolTime);
-	//GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, Message1);
-
-	FRotator CameraRot = GetControlRotation();
-	FString Message1 = FString::Printf(TEXT("CameraPitch : %f"), CameraRot.Pitch);
-	GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, Message1);
-
-	FString Message2 = FString::Printf(TEXT("CameraYaw : %f"), CameraRot.Yaw);	
-	GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, Message2);
+	for (int i = 0; i < QuickSlotIndex.Num(); i++)
+	{
+		FString Message2 = FString::Printf(TEXT("%d"), QuickSlotIndex[i]);
+		GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, Message2);
+	}
 
 	if (WakeUpAnimPlay)
 		return;
@@ -348,9 +339,9 @@ void AMagicalProjectCharacter::DefaultFunction(float _DT)
 
 	//====================================Inventory Widget
 	if (m_bIsVisibleInventory)
-		m_InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+		m_InventoryWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	else
-		m_InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+		m_InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
 
 	//======================================Attach Object Function
 	if (m_aActiveWeapon)
@@ -363,7 +354,8 @@ void AMagicalProjectCharacter::DefaultFunction(float _DT)
 		if (m_aActiveWeapon->IsDurabilityIsZero())
 		{
 			m_aActiveWeapon = nullptr;
-			ItemSlot[iWeaponEquipSlotNum] = InitialValueSlot;
+			//ItemSlot[iWeaponEquipSlotNum] = InitialValueSlot;
+			DeleteSlot(iWeaponEquipSlotNum);
 			iWeaponEquipSlotNum = -1;
 
 			ToolTipWidgetVisible = true;
@@ -611,17 +603,21 @@ void AMagicalProjectCharacter::SetupPlayerInputComponent(UInputComponent* Player
 		EnhancedInputComponent->BindAction(LCtrl, ETriggerEvent::Completed, this, &AMagicalProjectCharacter::InputLCtrl_End);
 		EnhancedInputComponent->BindAction(LShift, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputLShift);
 		EnhancedInputComponent->BindAction(LShift, ETriggerEvent::Completed, this, &AMagicalProjectCharacter::InputLShift_End);
-		EnhancedInputComponent->BindAction(Keyboard_C, ETriggerEvent::Triggered, this, &AMagicalProjectCharacter::InputKeyC);
+		EnhancedInputComponent->BindAction(Keyboard_C, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputKeyC);
 		EnhancedInputComponent->BindAction(Keyboard_E, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputKeyE);
-		EnhancedInputComponent->BindAction(Keyboard_R, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputKeyR);	
+		EnhancedInputComponent->BindAction(Keyboard_R, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputKeyR);
 		EnhancedInputComponent->BindAction(Keyboard_Q, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputKeyQ);
 		EnhancedInputComponent->BindAction(Num_4, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputNum_4);
 		EnhancedInputComponent->BindAction(LClick, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputLClick);
 		EnhancedInputComponent->BindAction(RClick, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputRClick);
 		EnhancedInputComponent->BindAction(RClick, ETriggerEvent::Completed, this, &AMagicalProjectCharacter::InputRClick_End);	
-		EnhancedInputComponent->BindAction(Num_1, ETriggerEvent::Triggered, this, &AMagicalProjectCharacter::InputNum_1);	
-		EnhancedInputComponent->BindAction(Num_2, ETriggerEvent::Triggered, this, &AMagicalProjectCharacter::InputNum_2);
-		EnhancedInputComponent->BindAction(Num_3, ETriggerEvent::Triggered, this, &AMagicalProjectCharacter::InputNum_3);
+		EnhancedInputComponent->BindAction(Num_1, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputNum_1);
+		EnhancedInputComponent->BindAction(Num_2, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputNum_2);
+		EnhancedInputComponent->BindAction(Num_3, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputNum_3);
+		EnhancedInputComponent->BindAction(Keyboard_U, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputKeyU);
+		EnhancedInputComponent->BindAction(Keyboard_I, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputKeyI);
+		EnhancedInputComponent->BindAction(Keyboard_O, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputKeyO);
+		EnhancedInputComponent->BindAction(Keyboard_P, ETriggerEvent::Started, this, &AMagicalProjectCharacter::InputKeyP);
 	}
 	else
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
@@ -685,7 +681,7 @@ void AMagicalProjectCharacter::InputSpace()
 {
 	if (WakeUpAnimPlay)
 		return;
-
+	
 	Jump();
 }
 
@@ -875,6 +871,26 @@ void AMagicalProjectCharacter::InputNum_4()
 		m_Controller->ShowCursor(m_bIsVisibleInventory);
 }
 
+void AMagicalProjectCharacter::InputKeyU()
+{
+	UseQuickSlot(0);
+}
+
+void AMagicalProjectCharacter::InputKeyI()
+{
+	UseQuickSlot(1);
+}
+
+void AMagicalProjectCharacter::InputKeyO()
+{
+	UseQuickSlot(2);
+}
+
+void AMagicalProjectCharacter::InputKeyP()
+{
+	UseQuickSlot(3);
+}
+
 void AMagicalProjectCharacter::InputLClick()
 {
 	if (WakeUpAnimPlay)
@@ -1061,7 +1077,7 @@ void AMagicalProjectCharacter::SettingCamera(float _DT, float _Length, FVector _
 
 void AMagicalProjectCharacter::ChangeItemSlot(int32 _fromIdx, int32 _toIdx)
 {
-	if (_fromIdx < 0 || _fromIdx >= ItemSlot.Num() || _toIdx < 0 || _toIdx >= ItemSlot.Num())
+	if (_fromIdx >= ItemSlot.Num() || _toIdx >= ItemSlot.Num())
 		return;
 
 	if (_fromIdx == _toIdx)
@@ -1080,12 +1096,12 @@ void AMagicalProjectCharacter::ChangeItemSlot(int32 _fromIdx, int32 _toIdx)
 		{
 			int32 iTotalAmount = ItemSlot[_fromIdx].Amount + ItemSlot[_toIdx].Amount;
 
-			if (iTotalAmount < ItemSlot[_toIdx].MaxAmount)
+			if (iTotalAmount < ItemSlot[_toIdx].MaxAmount)						// a와 b슬롯 아이템의 개수가 해당 아이템의 최대 개수를 넘지 못할 경우
 			{
 				TempSlot = InitialValueSlot;
 				ItemSlot[_toIdx].Amount += ItemSlot[_fromIdx].Amount;
 			}
-			else if (iTotalAmount > ItemSlot[_toIdx].MaxAmount)
+			else if (iTotalAmount > ItemSlot[_toIdx].MaxAmount)					// 최대 개수를 넘었을 경우
 			{
 				int32 toIdxNeedAmount = ItemSlot[_toIdx].MaxAmount - ItemSlot[_toIdx].Amount;
 
@@ -1096,35 +1112,48 @@ void AMagicalProjectCharacter::ChangeItemSlot(int32 _fromIdx, int32 _toIdx)
 
 				ItemSlot[_toIdx].Amount = ItemSlot[_toIdx].MaxAmount;
 			}
-			else
+			else																// 합이 딱 최대 개수일 경우
 			{
 				TempSlot = InitialValueSlot;
 				ItemSlot[_toIdx].Amount = ItemSlot[_toIdx].MaxAmount;
 			}
 			ItemSlot[_fromIdx] = TempSlot;
 		}
-		else
+		else																	// 두 슬롯 중 하나라도 최대 개수일 경우
 		{
 			TempSlot = ItemSlot[_fromIdx];	
 			ItemSlot[_fromIdx] = ItemSlot[_toIdx];	
 			ItemSlot[_toIdx] = TempSlot;	
+
+			// Update QuickSlot
+			for (int i = 0; i < QuickSlotIndex.Num(); i++)
+				if (QuickSlotIndex[i] == _fromIdx || QuickSlotIndex[i] == _toIdx)
+				{
+					if (QuickSlotIndex[i] == _fromIdx)
+						QuickSlotIndex[i] = _toIdx;
+					else
+						QuickSlotIndex[i] = _fromIdx;
+				}
+
 		}
 	}
-	else
+	else																		// 두 슬롯의 아이템 이름이 다를 경우
 	{
 		TempSlot = ItemSlot[_fromIdx];	
 		ItemSlot[_fromIdx] = ItemSlot[_toIdx];
 		ItemSlot[_toIdx] = TempSlot;
+
+		// Update QuickSlot
+		for (int i = 0; i < QuickSlotIndex.Num(); i++)
+			if (QuickSlotIndex[i] == _fromIdx || QuickSlotIndex[i] == _toIdx)
+			{
+				if (QuickSlotIndex[i] == _fromIdx)
+					QuickSlotIndex[i] = _toIdx;
+				else
+					QuickSlotIndex[i] = _fromIdx;
+			}
+
 	}
-
-	for (auto i : QuicktoItemSlotIndex)
-		if (i == _fromIdx)
-			i = _toIdx;
-
-	// Update QuickSlot
-	for (int i = 0; i < QuicktoItemSlotIndex.Num(); i++)
-		if (QuicktoItemSlotIndex[i] == _toIdx)
-			QuickSlot[i] = ItemSlot[_toIdx];
 
 	OnInventoryUpdated.Broadcast();
 }
@@ -1237,20 +1266,15 @@ void AMagicalProjectCharacter::UseItemSlot(int32 _SlotIdx)
 	
 	// if Item Amount is Zero..
 	if (ItemSlot[_SlotIdx].Amount <= 0)
-		ItemSlot[_SlotIdx] = InitialValueSlot;
+		DeleteSlot(_SlotIdx);
 
 	// Update QuickSlot
-	for (int i = 0; i < QuicktoItemSlotIndex.Num(); i++)
-		if (QuicktoItemSlotIndex[i] == _SlotIdx)
-			QuickSlot[i] = ItemSlot[_SlotIdx];
+	for (int i = 0; i < QuickSlotIndex.Num(); i++)
+		if (QuickSlotIndex[i] == _SlotIdx)
+			if (ItemSlot[_SlotIdx].Amount <= 0)
+				QuickSlotIndex[i] = -1;
 
 	OnInventoryUpdated.Broadcast();
-}
-
-void AMagicalProjectCharacter::AddQuickSlot(int32 _ItemSlotIdx, int32 _QuickSlotIdx)
-{
-	QuickSlot[_QuickSlotIdx] = ItemSlot[_ItemSlotIdx];
-	QuicktoItemSlotIndex[_QuickSlotIdx] = _ItemSlotIdx;
 }
 
 void AMagicalProjectCharacter::DeleteSlot(int32 _SlotIdx)
@@ -1290,6 +1314,32 @@ void AMagicalProjectCharacter::AddItemSlot(FGameItem _Item)
 	}
 
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Full Inventory!"));
+}
+
+void AMagicalProjectCharacter::AddQuickSlot(int32 _QuickSlotNum, int32 _SlotIdx)
+{
+	if (ItemSlot[_SlotIdx].ItemType != EItemType::CONSUMABLE)
+		return;
+
+	//// 이미 같은 슬롯이 퀵슬롯에 등록되어 있을 경우 패스
+	//for (int i = 0; i < QuickSlotIndex.Num(); i++)
+	//	if (QuickSlotIndex[i] == _SlotIdx)
+	//		return;
+
+	QuickSlotIndex[_QuickSlotNum] = _SlotIdx;
+}
+
+void AMagicalProjectCharacter::UseQuickSlot(int32 _QuickSlotNum)
+{
+	int SlotNum = QuickSlotIndex[_QuickSlotNum];
+
+	if (SlotNum == -1)
+		return;
+
+	UseItemSlot(SlotNum);
+
+	if (ItemSlot[SlotNum].Amount <= 0)
+		QuickSlotIndex[_QuickSlotNum] = -1;
 }
 
 void AMagicalProjectCharacter::FindObjByLineTrace()
