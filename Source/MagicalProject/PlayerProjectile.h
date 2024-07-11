@@ -41,7 +41,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Character")
 	float LifeTime;	
 
-
 public:
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,

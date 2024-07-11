@@ -1338,8 +1338,8 @@ void AMagicalProjectCharacter::UseQuickSlot(int32 _QuickSlotNum)
 
 	UseItemSlot(SlotNum);
 
-	if (ItemSlot[SlotNum].Amount <= 0)
-		QuickSlotIndex[_QuickSlotNum] = -1;
+	//if (ItemSlot[SlotNum].Amount <= 0)
+	//	QuickSlotIndex[_QuickSlotNum] = -1;
 }
 
 void AMagicalProjectCharacter::FindObjByLineTrace()

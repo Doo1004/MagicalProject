@@ -44,6 +44,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pawn")
 	UAnimMontage* FullMontage;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	class UAudioComponent* AudioComponent;
+
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	USoundBase* KnifeHitSound;
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	USoundBase* ClubHitSound;
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	USoundBase* PunchHitSound;
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	USoundBase* ProjectileHitSound;
+
 protected:
 	enum class EMonsterStatus
 	{
@@ -52,17 +64,18 @@ protected:
 		ATTACK,
 	};
 
-	EMonsterStatus	m_eMonsterStatus;
+	EMonsterStatus		m_eMonsterStatus;
 	
-	float			m_fPlayerDistance;
-	bool			m_bIsPlayerDetected;
-	bool			m_bIsDead;
+	float				m_fPlayerDistance;
+	bool				m_bIsPlayerDetected;
+	bool				m_bIsDead;
 
-	FVector			m_vImpulse;
-	FVector			m_vImpactDirection;
-	float			m_fImpactStrength;
+	FVector				m_vImpulse;
+	FVector				m_vImpactDirection;
+	float				m_fImpactStrength;
 
-	AMonsterAI* m_MonsterAI;
+	AMonsterAI*			m_MonsterAI;
+	UParticleSystem*	m_HitParticle;
 
 protected:
 	virtual void BeginPlay() override;
@@ -73,8 +86,8 @@ protected:
 	void DefaultFunction(float _DT);
 	void ClearAttackNum(UAnimMontage* Montage, bool bInterrupted);
 
-	void HitReaction();
-	void DeadReaction(int _OtherNum);
+	void HitReaction(int _WeaponNum, FVector _HitPoint);
+	void DeadReaction(int _WeaponNum, FVector _HitPoint);
 
 	FVector GetImpactDirection(AActor* DamageCauser, AActor* DamagedActor);
 	float CalculateImpactStrength(AActor* DamageCauser, int ProjectileNum);

@@ -1,6 +1,9 @@
 #include "NormalMonster.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/AudioComponent.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "MonsterAI.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 ANormalMonster::ANormalMonster()
@@ -8,6 +11,12 @@ ANormalMonster::ANormalMonster()
 	PrimaryActorTick.bCanEverTick = true;
 
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ANormalMonster::OnOverlapBegin);
+
+	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
+	AudioComponent->SetupAttachment(RootComponent);
+
+	static ConstructorHelpers::FObjectFinder<UParticleSystem>Blood(TEXT("/Game/CustomAsset/Effect/P_Blood"));
+	m_HitParticle = Blood.Object;
 
 	HP = 100;
 	MaxHP = HP;
@@ -35,6 +44,8 @@ void ANormalMonster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if(m_HitParticle)
+		GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("ParticleLoaded"));
 	//===============================Set Status
 	if (HP > 0)
 	{
@@ -123,10 +134,11 @@ void ANormalMonster::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor*
 	{
 		FString sOtherName = OtherComp->GetOwner()->GetName(); 
 		int iOtherNum = 0;
+		FVector HitPoint = (OtherComp->GetComponentLocation() + GetActorLocation()) / 2;
 
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, OtherComp->GetName());
-		FString Message1 = FString::Printf(TEXT("HP : %f"), HP);	
-		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, Message1);
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, OtherComp->GetName());
+		//FString Message1 = FString::Printf(TEXT("HP : %f"), HP);	
+		//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, Message1);
 
 		if (OtherComp->GetName().Contains(TEXT("LeftHand")))		{ HP -= 10.f; iOtherNum = 1; }	
 		else if (OtherComp->GetName().Contains(TEXT("RightHand")))	{ HP -= 15.f; iOtherNum = 2; }
@@ -137,13 +149,13 @@ void ANormalMonster::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor*
 		else if (sOtherName.Contains(TEXT("ElectricBall")))			{ HP -= 80.f; iOtherNum = 7; }	
 
 		if (HP > 0.f && iOtherNum != 0)
-			HitReaction();
+			HitReaction(iOtherNum, HitPoint);
 		else if (HP <= 0.f)
 		{
 			m_vImpactDirection = GetImpactDirection(OtherActor, this);		
 			m_fImpactStrength = CalculateImpactStrength(OtherActor, iOtherNum);	
 			m_vImpulse = m_vImpactDirection * m_fImpactStrength;	
-			DeadReaction(iOtherNum);	
+			DeadReaction(iOtherNum, HitPoint);
 		}
 	}
 }
@@ -153,15 +165,42 @@ void ANormalMonster::ClearAttackNum(UAnimMontage* Montage, bool bInterrupted)
 	AttackType = 0;
 }
 
-void ANormalMonster::HitReaction()
+void ANormalMonster::HitReaction(int _WeaponNum, FVector _HitPoint)
 {
 	UAnimInstance* AnimInst = GetMesh()->GetAnimInstance();	
 	AnimInst->Montage_Play(UpperMontage, 1.f);
 	AnimInst->Montage_JumpToSection(FName("HitReact"), UpperMontage);
+
+	// ...Particle & SoundPlay
+	if (_WeaponNum == 1 || _WeaponNum == 2)
+		AudioComponent->SetSound(PunchHitSound);
+	else if (_WeaponNum == 3 || _WeaponNum == 4)
+		AudioComponent->SetSound(ClubHitSound);
+	else if (_WeaponNum == 5)
+		AudioComponent->SetSound(KnifeHitSound);
+	else if (_WeaponNum == 6 || _WeaponNum == 7)
+		AudioComponent->SetSound(ProjectileHitSound);	
+
+	AudioComponent->Play();
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), m_HitParticle, _HitPoint, GetActorRotation());
 }
 
-void ANormalMonster::DeadReaction(int _OtherNum)
+void ANormalMonster::DeadReaction(int _WeaponNum, FVector _HitPoint)
 {
+	// ...Particle & SoundPlay
+	if (_WeaponNum == 1 || _WeaponNum == 2)	
+		AudioComponent->SetSound(PunchHitSound);	
+	else if (_WeaponNum == 3 || _WeaponNum == 4)	
+		AudioComponent->SetSound(ClubHitSound);	
+	else if (_WeaponNum == 5)	
+		AudioComponent->SetSound(KnifeHitSound);	
+	else if (_WeaponNum == 6 || _WeaponNum == 7)	
+		AudioComponent->SetSound(ProjectileHitSound);		
+
+	AudioComponent->Play();	
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), m_HitParticle, _HitPoint, GetActorRotation());	
+
+
 	m_bIsDead = true;
 	
 	if(GetController())
@@ -169,7 +208,7 @@ void ANormalMonster::DeadReaction(int _OtherNum)
 
 	UAnimInstance* AnimInst = GetMesh()->GetAnimInstance();	
 
-	if (_OtherNum >= 1 && _OtherNum <= 5)
+	if (_WeaponNum >= 1 && _WeaponNum <= 5)
 	{
 		int DeathNum = FMath::RandRange(1, 2);
 		AnimInst->Montage_Play(FullMontage, 1.f);
@@ -189,7 +228,7 @@ void ANormalMonster::DeadReaction(int _OtherNum)
 		FString Name2 = FString::Printf(TEXT("Number : %d"), CalculateImpactDirection());
 		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, Name2);
 	}
-	else if (_OtherNum >= 6 && _OtherNum <= 7)
+	else if (_WeaponNum >= 6 && _WeaponNum <= 7)
 	{
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);	
 		GetMesh()->SetSimulatePhysics(true);	
