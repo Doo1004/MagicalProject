@@ -145,11 +145,11 @@ void AMagicalProjectCharacter::Tick(float DeltaTime)
 	if (m_aLineHitActor)
 		GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, m_aLineHitActor->GetActorLabel());
 
-	for (int i = 0; i < QuickSlotIndex.Num(); i++)
-	{
-		FString Message2 = FString::Printf(TEXT("%d"), QuickSlotIndex[i]);
-		GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, Message2);
-	}
+	//for (int i = 0; i < QuickSlotIndex.Num(); i++)
+	//{
+	//	FString Message2 = FString::Printf(TEXT("%d"), QuickSlotIndex[i]);
+	//	GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, Message2);
+	//}
 
 	if (WakeUpAnimPlay)
 		return;
@@ -664,8 +664,8 @@ void AMagicalProjectCharacter::Move(const FInputActionValue& Value)
 
 void AMagicalProjectCharacter::Look(const FInputActionValue& Value)
 {
-	if (WakeUpAnimPlay)
-		return;
+	//if (WakeUpAnimPlay)
+	//	return;
 
 	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -975,13 +975,20 @@ void AMagicalProjectCharacter::InputNum_1()
 	if (WakeUpAnimPlay)
 		return;
 
-	if(	m_ePlayerStatus != EPlayerStatus::DASH &&
+	if (m_ePlayerStatus != EPlayerStatus::DASH &&
 		m_ePlayerStatus != EPlayerStatus::RUN &&
 		m_ePlayerStatus != EPlayerStatus::PUNCHATTACK &&
-		m_ePlayerStatus != EPlayerStatus::WEAPONATTACK	
+		m_ePlayerStatus != EPlayerStatus::WEAPONATTACK
 		)
-		//&& !GetCharacterMovement()->IsFalling())	
+	{
 		m_ePlayerStatus = EPlayerStatus::CASTING;
+
+		if(FingersnapSound)
+			UGameplayStatics::PlaySoundAtLocation(this, FingersnapSound, GetActorLocation());
+
+		if (BurnerSound)
+			UGameplayStatics::PlaySoundAtLocation(this, BurnerSound, GetActorLocation());
+	}
 }
 
 void AMagicalProjectCharacter::InputNum_2()
@@ -1338,8 +1345,8 @@ void AMagicalProjectCharacter::UseQuickSlot(int32 _QuickSlotNum)
 
 	UseItemSlot(SlotNum);
 
-	//if (ItemSlot[SlotNum].Amount <= 0)
-	//	QuickSlotIndex[_QuickSlotNum] = -1;
+	if (ItemSlot[SlotNum].Amount <= 0)
+		QuickSlotIndex[_QuickSlotNum] = -1;
 }
 
 void AMagicalProjectCharacter::FindObjByLineTrace()

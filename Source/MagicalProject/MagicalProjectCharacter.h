@@ -166,6 +166,14 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Character")
 	bool WakeUpAnimPlay;
 
+	UPROPERTY(EditAnywhere, Category = "Character")
+	USoundBase* FingersnapSound;
+
+	UPROPERTY(EditAnywhere, Category = "Character")
+	USoundBase* BurnerSound;
+
+	
+
 	//====================================Anim Montage=====================================//
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pawn")	
 	UAnimMontage* ShieldCasting;

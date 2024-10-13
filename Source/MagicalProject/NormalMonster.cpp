@@ -44,8 +44,8 @@ void ANormalMonster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if(m_HitParticle)
-		GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("ParticleLoaded"));
+	//if(m_HitParticle)
+	//	GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("ParticleLoaded"));
 	//===============================Set Status
 	if (HP > 0)
 	{

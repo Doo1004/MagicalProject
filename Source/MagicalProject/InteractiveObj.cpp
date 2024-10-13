@@ -72,13 +72,13 @@ void AInteractiveObj::Tick(float DeltaTime)
 	//		GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("SoundStopped"));
 	//}
 
-	if (ObjectType == EInteractiveObjectType::Switch)
-	{
-		if(m_uSwitchSound)
-			GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("Sound Loaded"));
-		else
-			GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("Sound Not Loaded"));
-	}
+	//if (ObjectType == EInteractiveObjectType::Switch)
+	//{
+	//	if(m_uSwitchSound)
+	//		GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("Sound Loaded"));
+	//	else
+	//		GEngine->AddOnScreenDebugMessage(-1, -1.f, FColor::Red, TEXT("Sound Not Loaded"));
+	//}
 
 	//if (AutoTrigger)
 	//{
